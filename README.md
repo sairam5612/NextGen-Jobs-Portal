@@ -78,13 +78,6 @@ You can run the application using Maven:
 mvn spring-boot:run
 ```
 
-## 🧪 API Documentation
-The project includes Swagger UI for interactive API testing and documentation.
-
-
-    Swagger UI: http://localhost:8082/swagger-ui/index.html
-
-    OpenAPI JSON: http://localhost:8082/v3/api-docs
 
 ## 📝 License
 Distributed under the MIT License. See LICENSE for more information.
