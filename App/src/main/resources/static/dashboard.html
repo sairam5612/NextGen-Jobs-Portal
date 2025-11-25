@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | NextGen Jobs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Ensure description scrolls if too long */
+        .scrollable-desc {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+            white-space: pre-wrap;
+        }
+        /* Custom Scrollbar */
+        .scrollable-desc::-webkit-scrollbar { width: 6px; }
+        .scrollable-desc::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .scrollable-desc::-webkit-scrollbar-thumb { background: rgba(108, 99, 255, 0.3); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="index.html">NextGen Jobs</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navContent">
+            <div class="ms-auto d-flex align-items-center">
+
+                <button id="postJobBtn" class="btn btn-primary-custom btn-sm me-3 d-none" onclick="openPostModal()">+ Post Job</button>
+
+                <div class="dropdown">
+                    <button class="btn d-flex align-items-center gap-2 border-0 bg-transparent" type="button" data-bs-toggle="dropdown">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; font-weight: bold;">
+                            <span id="userInitials">U</span>
+                        </div>
+                        <span id="usernameDisplay" class="fw-bold text-secondary">User</span>
+                        <i class="bi bi-chevron-down small text-secondary"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 220px;">
+                        <li class="px-3 py-2 border-bottom">
+                            <span class="d-block small text-muted">Signed in as</span>
+                            <strong id="userEmailDisplay" class="text-truncate d-block">...</strong>
+                        </li>
+                        <li><a class="dropdown-item py-2" href="#" onclick="openModal('settingsModal')"><i class="bi bi-gear me-2"></i> Settings</a></li>
+                        <li><a class="dropdown-item py-2" href="#" onclick="openModal('aboutModal')"><i class="bi bi-info-circle me-2"></i> About App</a></li>
+                        <li><a class="dropdown-item py-2" href="#" onclick="openModal('helpModal')"><i class="bi bi-question-circle me-2"></i> Help & Support</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="px-3 py-2 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-moon-stars me-2"></i> Dark Mode</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="darkModeSwitch" onchange="toggleTheme()">
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger py-2" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4" style="margin-top: 90px;">
+    <div class="row">
+
+        <div class="col-lg-3 mb-4">
+            <div class="glass-card p-4 sidebar-container">
+                <h5 class="fw-bold mb-4"><i class="bi bi-sliders"></i> Filter Jobs</h5>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">SEARCH</label>
+                    <input type="text" id="searchKeyword" class="form-control" placeholder="Job title...">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">LOCATION</label>
+                    <input type="text" id="searchLocation" class="form-control" placeholder="City...">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted">WORK MODE</label>
+                    <select id="filterWorkMode" class="form-select">
+                        <option value="">Any</option>
+                        <option value="Remote">Remote</option>
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="On-site">On-site</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="small fw-bold text-muted">EXPERIENCE</label>
+                    <select id="filterExp" class="form-select">
+                        <option value="">Any</option>
+                        <option value="Entry Level">Entry Level</option>
+                        <option value="Mid Senior">Mid Senior</option>
+                        <option value="Senior">Senior</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary-custom w-100" onclick="filterJobs()">Apply Filters</button>
+                <button class="btn btn-link w-100 mt-2 text-decoration-none text-muted" onclick="clearFilters()">Clear All</button>
+            </div>
+        </div>
+
+        <div class="col-lg-9 job-list">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="jobView" id="viewAll" autocomplete="off" checked onclick="switchView('all')">
+                    <label class="btn btn-outline-custom" for="viewAll">Browse All</label>
+
+                    <input type="radio" class="btn-check" name="jobView" id="viewMine" autocomplete="off" onclick="switchView('mine')">
+                    <label class="btn btn-outline-custom" for="viewMine" id="myJobsTab" style="display: none;">Manage My Jobs</label>
+                </div>
+                <span id="jobCount" class="badge badge-custom-light">Loading...</span>
+            </div>
+
+            <div id="jobsContainer" class="row g-3">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i> Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <ul class="nav nav-pills mb-3 nav-justified" id="pills-tab">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pills-account">Profile</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-password">Security</button></li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+                    <div class="tab-pane fade show active" id="pills-account">
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">USERNAME</label>
+                            <input type="text" id="settingsUsername" class="form-control" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">EMAIL</label>
+                            <input type="text" id="settingsEmail" class="form-control" disabled>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="pills-password">
+                        <div id="pwdAlert" class="alert d-none p-2 small"></div>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">NEW PASSWORD</label>
+                            <input type="password" id="newPassword" class="form-control" placeholder="Enter new password">
+                        </div>
+                        <button class="btn btn-primary-custom w-100" onclick="changePassword()">Update Password</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="aboutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-5 text-center">
+                <h2 class="fw-bold text-primary mb-2">NextGen Jobs</h2>
+                <p class="text-muted">Version 1.0.0</p>
+                <p class="mt-4">Built for the "Build Next Tech" Internship Program.</p>
+                <hr>
+                <div class="mt-3">
+                    <button class="btn btn-primary-custom px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-life-preserver me-2"></i> Help & Support</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="accordion" id="helpAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">How do I apply?</button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body text-muted">Click the "Apply Now" button on any job card.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="jobModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <span class="badge bg-primary bg-opacity-10 text-primary" id="modalJobType">Full Time</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-5 pt-3">
+                <h2 class="fw-bold mb-1" id="modalTitle">Job Title</h2>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-muted mb-0" id="modalCompany">Company</h5>
+                    <small class="text-muted"><i class="bi bi-clock"></i> Posted on <span id="modalPostedDate">...</span></small>
+                </div>
+
+                <div id="modalStatsGrid" class="stat-grid"></div>
+
+                <h5 class="fw-bold mt-4">Job Description</h5>
+                <div class="text-secondary scrollable-desc" id="modalDesc">Loading...</div>
+            </div>
+            <div class="modal-footer border-0 p-4">
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Close</button>
+                <button id="btnApply" type="button" class="btn btn-primary-custom px-5" onclick="triggerApply()">Apply Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="postJobModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Create New Opportunity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">JOB TITLE</label>
+                        <input type="text" id="postTitle" class="form-control" placeholder="e.g. Senior Java Dev">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">COMPANY NAME</label>
+                        <input type="text" id="postCompany" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">LOCATION</label>
+                        <input type="text" id="postLocation" class="form-control" placeholder="e.g. Remote, NY">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">WORK MODE</label>
+                        <select id="postWorkMode" class="form-select">
+                            <option value="Remote">Remote</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="On-site">On-site</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">JOB TYPE</label>
+                        <select id="postJobType" class="form-select">
+                            <option value="FULL_TIME">Full Time</option>
+                            <option value="PART_TIME">Part Time</option>
+                            <option value="CONTRACT">Contract</option>
+                            <option value="INTERNSHIP">Internship</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">EXPERIENCE LEVEL</label>
+                        <select id="postExp" class="form-select">
+                            <option value="Entry Level">Entry Level</option>
+                            <option value="Mid Senior">Mid Senior</option>
+                            <option value="Senior">Senior</option>
+                            <option value="Lead">Lead</option>
+                            <option value="Director">Director</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">MIN SALARY</label>
+                        <input type="number" id="postSalaryMin" class="form-control" placeholder="60000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold text-muted">MAX SALARY</label>
+                        <input type="number" id="postSalaryMax" class="form-control" placeholder="100000">
+                    </div>
+                    <div class="col-12">
+                        <label class="small fw-bold text-muted">DESCRIPTION</label>
+                        <textarea id="postDesc" class="form-control" rows="5" placeholder="Describe the role, requirements, and benefits..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary-custom px-5" onclick="submitNewJob()">Publish Job</button>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="file" id="resumeUpload" accept="application/pdf" style="display: none;">
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API_URL = 'http://localhost:8082/api';
+    const token = localStorage.getItem('jwtToken');
+    let currentJobId = null;
+    let allJobsCache = [];
+    let userRoles = []; // GLOBAL VARIABLE
+
+    if (!token) window.location.href = 'login.html';
+
+    // --- INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", () => {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userRoles = payload.roles || []; // Store roles globally
+
+        // 1. Get Email from Storage
+        const storedEmail = localStorage.getItem('userEmail');
+        const displayEmail = (storedEmail && storedEmail !== "undefined") ? storedEmail : "Please Login Again";
+
+        // 2. Update UI
+        document.getElementById('usernameDisplay').innerText = payload.sub;
+        document.getElementById('userInitials').innerText = payload.sub.charAt(0).toUpperCase();
+        document.getElementById('userEmailDisplay').innerText = displayEmail;
+        document.getElementById('settingsUsername').value = payload.sub;
+        document.getElementById('settingsEmail').value = displayEmail;
+
+        // 3. Employer Checks
+        if (userRoles.includes("ROLE_EMPLOYER")) {
+            document.getElementById('postJobBtn').classList.remove('d-none');
+            const tab = document.getElementById('myJobsTab');
+            if(tab) tab.style.display = 'inline-block';
+        }
+
+        // 4. Theme Logic
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('darkModeSwitch').checked = (savedTheme === 'dark');
+
+        loadJobs();
+    });
+
+    // --- PASSWORD CHANGE ---
+    async function changePassword() {
+        const newPass = document.getElementById('newPassword').value;
+        const alertBox = document.getElementById('pwdAlert');
+
+        if(newPass.length < 6) {
+            alertBox.className = 'alert alert-warning d-block';
+            alertBox.innerText = "Password must be at least 6 characters.";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/auth/change-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ password: newPass })
+            });
+
+            if (res.ok) {
+                alertBox.className = 'alert alert-success d-block';
+                alertBox.innerText = "Password Updated Successfully!";
+                document.getElementById('newPassword').value = "";
+            } else {
+                alertBox.className = 'alert alert-danger d-block';
+                alertBox.innerText = "Failed to update password.";
+            }
+        } catch (e) {
+            alertBox.className = 'alert alert-danger d-block';
+            alertBox.innerText = "Server Error.";
+        }
+    }
+
+    // --- THEME TOGGLE ---
+    function toggleTheme() {
+        const isDark = document.getElementById('darkModeSwitch').checked;
+        const theme = isDark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }
+
+    function openModal(id) {
+        new bootstrap.Modal(document.getElementById(id)).show();
+    }
+
+    function logout() {
+        localStorage.removeItem('jwtToken');
+        window.location.href = 'index.html';
+    }
+
+    // --- JOB LOGIC ---
+    let currentView = 'all';
+
+    async function switchView(view) {
+        currentView = view;
+        const container = document.getElementById('jobsContainer');
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+        if (view === 'mine') {
+            try {
+                const res = await fetch(`${API_URL}/jobs/my-jobs`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const jobs = await res.json();
+                    renderJobs(jobs);
+                } else {
+                    console.error("Failed to fetch my jobs");
+                }
+            } catch(e) { console.error(e); }
+        } else {
+            loadJobs();
+        }
+    }
+
+    async function loadJobs(params = "") {
+        const endpoint = params ? `/jobs/search?${params}` : '/jobs';
+        try {
+            const res = await fetch(`${API_URL}${endpoint}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const jobs = await res.json();
+            renderJobs(jobs);
+        } catch (e) { console.error(e); }
+    }
+
+    function renderJobs(jobs) {
+        allJobsCache = jobs; // Save full data (with HTML) for the modal
+        const container = document.getElementById('jobsContainer');
+
+        if(document.getElementById('jobCount')) {
+            document.getElementById('jobCount').innerText = `${jobs.length} Jobs Found`;
+        }
+        container.innerHTML = '';
+
+        if (jobs.length === 0) {
+            container.innerHTML = '<div class="text-center py-5 text-muted">No jobs found.</div>';
+            return;
+        }
+
+        jobs.forEach(job => {
+            const workMode = job.workMode || 'Not Specified';
+            const expLevel = job.experienceLevel || 'Not Specified';
+
+            let applicantBadge = '';
+            if (currentView === 'mine') {
+                const count = job.applicationCount || 0;
+                applicantBadge = `<span class="badge bg-warning text-dark ms-2"><i class="bi bi-people-fill"></i> ${count} Applicants</span>`;
+            }
+
+            // --- THE FIX: STRIP HTML FOR PREVIEW ---
+            // 1. Convert HTML to plain text
+            let plainDesc = stripHtml(job.description);
+            // 2. Cut it if it's too long (Visual safety)
+            if(plainDesc.length > 150) {
+                plainDesc = plainDesc.substring(0, 150) + "...";
+            }
+            // ---------------------------------------
+
+            const card = `
+            <div class="col-12">
+                <div class="glass-card p-4" onclick="openJobDetails(${job.id})">
+                    <div class="row align-items-center">
+
+                        <div class="col-md-8" style="min-width: 0;">
+                            <div class="d-flex align-items-center mb-2">
+                                <h5 class="fw-bold text-primary mb-0 me-2 text-truncate">${job.title}</h5>
+                                ${applicantBadge}
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold text-main">${job.companyName}</span>
+                                <span class="mx-2 text-muted">|</span>
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info">${workMode}</span>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success">${expLevel}</span>
+                            </div>
+
+                            <p class="text-muted small job-desc-preview">${plainDesc}</p>
+                        </div>
+
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0 d-flex flex-column align-items-end justify-content-center">
+                            <div class="small text-muted mb-3"><i class="bi bi-geo-alt-fill"></i> ${job.location}</div>
+
+                            <button class="btn btn-primary-custom px-4 btn-sm">View Details</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>`;
+            container.innerHTML += card;
+        });
+    }
+
+    function filterJobs() {
+        const title = document.getElementById('searchKeyword').value;
+        const loc = document.getElementById('searchLocation').value;
+        const mode = document.getElementById('filterWorkMode').value;
+        const exp = document.getElementById('filterExp').value;
+        const params = new URLSearchParams();
+        if(title) params.append('title', title);
+        if(loc) params.append('location', loc);
+        if(mode) params.append('workMode', mode);
+        if(exp) params.append('experience', exp);
+        loadJobs(params.toString());
+    }
+
+   // EXPERT FIX: Replaces ANY tag with a space to prevent word merging
+    function stripHtml(html) {
+        if (!html) return "";
+
+        // 1. Replace <br> explicitly with space
+        let text = html.replace(/<br\s*\/?>/gi, " ");
+
+        // 2. Replace ALL tags (<...>) with a space
+        text = text.replace(/<[^>]+>/g, " ");
+
+        // 3. Decode HTML entities (like &amp; -> &) using a temp element
+        let tmp = document.createElement("DIV");
+        tmp.innerHTML = text;
+        text = tmp.textContent || tmp.innerText || "";
+
+        // 4. Collapse multiple spaces into one and trim
+        return text.replace(/\s+/g, " ").trim();
+    }
+
+    function clearFilters() {
+        document.getElementById('searchKeyword').value = '';
+        document.getElementById('searchLocation').value = '';
+        document.getElementById('filterWorkMode').value = '';
+        document.getElementById('filterExp').value = '';
+        loadJobs();
+    }
+
+    function openJobDetails(jobId) {
+        const job = allJobsCache.find(j => j.id === jobId);
+        if(!job) return;
+        currentJobId = jobId;
+
+        // Basic Info
+        document.getElementById('modalTitle').innerText = job.title;
+        document.getElementById('modalCompany').innerText = job.companyName;
+
+        // Date
+        const date = new Date(job.postedDate || new Date());
+        document.getElementById('modalPostedDate').innerText = date.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' });
+
+        // Salary
+        let salaryText = "Not Disclosed";
+        if(job.salaryMin && job.salaryMax) {
+             const formatK = (num) => num >= 1000 ? (num/1000).toFixed(0) + 'k' : num;
+             salaryText = `$${formatK(job.salaryMin)} - $${formatK(job.salaryMax)}`;
+        }
+
+
+        // LOGIC: Show Applicant Count if available (Even if 0)
+        let applicantHtml = '';
+
+        // Only show if the field exists (Backend sends it) OR if we are in 'mine' view
+        if (job.applicationCount !== undefined && job.applicationCount !== null) {
+            applicantHtml = `
+            <div class="stat-box applicants">
+                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Applicants</span>
+                    <span class="stat-value">${job.applicationCount}</span>
+                </div>
+            </div>`;
+        }
+
+        // --- MODERN STATS INJECTION ---
+        const statsHTML = `
+            <!-- Location (Blue) -->
+            <div class="stat-box location">
+                <div class="stat-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Location</span>
+                    <span class="stat-value">${job.location}</span>
+                </div>
+            </div>
+
+            <!-- Experience (Purple) -->
+            <div class="stat-box experience">
+                <div class="stat-icon"><i class="bi bi-briefcase-fill"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Experience</span>
+                    <span class="stat-value">${job.experienceLevel || 'N/A'}</span>
+                </div>
+            </div>
+
+            <!-- Salary (Green) -->
+            <div class="stat-box salary">
+                <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Salary</span>
+                    <span class="stat-value">${salaryText}</span>
+                </div>
+            </div>
+
+            ${applicantHtml}
+        `;
+
+        document.getElementById('modalStatsGrid').innerHTML = statsHTML;
+
+        // Description (Scrollable)
+        document.getElementById('modalDesc').innerHTML = job.description;
+
+        // --- FIX: BUTTON VISIBILITY LOGIC ---
+        const btnApply = document.getElementById('btnApply');
+
+        // Debugging: See what role is detected in the Console (F12)
+        console.log("Current User Roles:", userRoles);
+
+        if (userRoles.includes('ROLE_EMPLOYER')) {
+            // User is Employer: Hide Button
+            btnApply.style.display = 'none';
+        } else {
+            // User is Job Seeker: Show Button
+            // FIX: Use 'inline-block' instead of 'block' to keep it aligned next to "Close"
+            btnApply.style.display = 'inline-block';
+        }
+
+        new bootstrap.Modal(document.getElementById('jobModal')).show();
+    }
+
+    function triggerApply() {
+        bootstrap.Modal.getInstance(document.getElementById('jobModal')).hide();
+        document.getElementById('resumeUpload').click();
+    }
+
+    document.getElementById('resumeUpload').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        Swal.fire({
+            title: 'Uploading Resume...',
+            html: 'Please wait while we process your application.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        try {
+            const res = await fetch(`${API_URL}/jobs/${currentJobId}/apply`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Application Sent!',
+                    text: 'Good luck! We have sent a confirmation email.',
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+            } else {
+                const txt = await res.text();
+                let msg = "Failed to apply.";
+                try { msg = JSON.parse(txt).message || txt; } catch(e){}
+                Swal.fire({ icon: 'error', title: 'Application Failed', text: msg });
+            }
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not upload file.' });
+        }
+        e.target.value = '';
+    });
+
+    // --- POST JOB LOGIC ---
+    function openPostModal() {
+        new bootstrap.Modal(document.getElementById('postJobModal')).show();
+    }
+
+    async function submitNewJob() {
+        const jobData = {
+            title: document.getElementById('postTitle').value,
+            companyName: document.getElementById('postCompany').value,
+            location: document.getElementById('postLocation').value,
+            jobType: document.getElementById('postJobType').value,
+            workMode: document.getElementById('postWorkMode').value,
+            experienceLevel: document.getElementById('postExp').value,
+            salaryMin: parseFloat(document.getElementById('postSalaryMin').value),
+            salaryMax: parseFloat(document.getElementById('postSalaryMax').value),
+            description: document.getElementById('postDesc').value
+        };
+
+        try {
+            const res = await fetch(`${API_URL}/jobs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(jobData)
+            });
+
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('postJobModal')).hide();
+                Swal.fire('Success', 'Job Posted Successfully!', 'success');
+                // Switch to "My Jobs" view to see the new post
+                document.getElementById('viewMine').click();
+            } else {
+                Swal.fire('Error', 'Failed to post job.', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'Server error.', 'error');
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register | NextGen Jobs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="d-flex align-items-center justify-content-center py-5">
+
+<div class="glass-card p-5" style="width: 100%; max-width: 500px;">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Create Account</h2>
+        <p class="text-muted">Join the future of hiring</p>
+    </div>
+
+    <div id="alertBox" class="alert d-none"></div>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label fw-bold small text-muted">USERNAME</label>
+            <input type="text" id="username" class="form-control">
+        </div>
+        <div class="col-12">
+            <label class="form-label fw-bold small text-muted">EMAIL</label>
+            <input type="email" id="email" class="form-control">
+        </div>
+        <div class="col-12">
+            <label class="form-label fw-bold small text-muted">PASSWORD</label>
+            <input type="password" id="password" class="form-control">
+        </div>
+        <div class="col-12">
+            <label class="form-label fw-bold small text-muted">I AM A</label>
+            <select id="role" class="form-select form-control">
+                <option value="applicant">Job Seeker</option>
+                <option value="employer">Employer</option>
+            </select>
+        </div>
+        <div class="col-12 mt-4">
+            <button class="btn btn-primary-custom w-100 py-2" onclick="register()">Sign Up</button>
+        </div>
+    </div>
+    <div class="text-center mt-3">
+        <small class="text-muted">Already have an account? <a href="login.html" style="color: var(--primary)">Login</a></small>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8082/api';
+
+    async function register() {
+        const usernameVal = document.getElementById('username').value;
+        const passwordVal = document.getElementById('password').value; // Save password for auto-login
+
+        const data = {
+            username: usernameVal,
+            email: document.getElementById('email').value,
+            password: passwordVal,
+            role: [document.getElementById('role').value]
+        };
+
+        const alertBox = document.getElementById('alertBox');
+
+        try {
+            // 1. REGISTER
+            const res = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alertBox.className = 'alert alert-success';
+                alertBox.innerText = 'Account created! Logging you in...';
+                alertBox.classList.remove('d-none');
+
+                // 2. AUTO-LOGIN (The Magic Step)
+                await autoLogin(usernameVal, passwordVal);
+
+            } else {
+                const txt = await res.text();
+                alertBox.className = 'alert alert-danger';
+                alertBox.innerText = txt;
+                alertBox.classList.remove('d-none');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function autoLogin(u, p) {
+        try {
+            const res = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: u, password: p })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('jwtToken', data.token);
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+            } else {
+                window.location.href = 'login.html';
+            }
+        } catch (e) { window.location.href = 'login.html'; }
+    }
+</script>
+</body>
+</html>
